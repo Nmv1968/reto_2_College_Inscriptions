@@ -25,7 +25,7 @@ class ColaCircular:
     def dequeue(self):
         if self.is_empty():
             return None
-        valor = self.frente.estudiante
+        estudiante = self.frente.estudiante
         if self.frente == self.final:
             self.frente = None
             self.final = None
@@ -33,7 +33,18 @@ class ColaCircular:
             self.frente = self.frente.siguiente
             self.final.siguiente = self.frente
         self.length -= 1
-        return valor
+        return estudiante
 
     def size(self):
         return self.length
+    
+    def __iter__(self):
+        if self.is_empty():
+            return
+        actual = self.frente
+        while True:
+            yield actual.id_estudiante, actual.estudiante
+            actual = actual.siguiente
+            if actual == self.frente:
+                break
+        

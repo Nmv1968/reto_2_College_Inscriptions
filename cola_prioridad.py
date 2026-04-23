@@ -38,12 +38,12 @@ class ColaPrioridad:
         if self.is_empty():
             print("⚠️ Underflow: cola prioritaria vacía.")
             return None
-        valor = self.frente.estudiante
+        estudiante = self.frente.estudiante
         prioridad = self.frente.prioridad
         motivo_prioridad = self.frente.motivo_prioridad
         self.frente = self.frente.siguiente
         self.length -= 1
-        return valor, prioridad, motivo_prioridad
+        return estudiante, prioridad, motivo_prioridad
 
     # Comprueba si existen elementos en la cola.
     def is_empty(self):
@@ -57,5 +57,5 @@ class ColaPrioridad:
     def __iter__(self):
         actual = self.frente
         while actual:
-            yield actual.estudiante, actual.prioridad, actual.motivo_prioridad
+            yield actual.id_estudiante, actual.estudiante, actual.prioridad, actual.motivo_prioridad
             actual = actual.siguiente

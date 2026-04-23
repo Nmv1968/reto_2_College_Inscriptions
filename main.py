@@ -8,6 +8,7 @@ from lista_enlazada import ListaEnlazada
 def inscriptionMenu():
     cola_simple = ColaSimple()
     cola_prioridad = ColaPrioridad()
+    cola_circular = ColaCircular()
     lista_inscritos: ListaEnlazada = ListaEnlazada()
 
     while True:
@@ -26,7 +27,15 @@ def inscriptionMenu():
         match opcion:
             case "1":
                 print("\n=== Configuración de curso ===")
-                print(configurar_curso(lista_inscritos))
+                if (
+                    lista_inscritos.get_list_name() is not None 
+                    and lista_inscritos.get_list_max_size() is not None
+                ):
+                    print(
+                        "⚠️ El curso ya ha sido configurado. No se puede modificar. ⛔"
+                    )
+                else:
+                    print(configurar_curso(lista_inscritos))
             case "2":
                 print("\n=== Registro de llegada de estudiante ===")
                 if (
@@ -35,24 +44,27 @@ def inscriptionMenu():
                 ):
                     print("⚠️ Configure el curso antes de registrar estudiantes.")
                 else:
-                    print(enqueue_estudiante(cola_simple, cola_prioridad))
-            case "4":
-                print("\n=== Estado actual de inscritos y colas ===")
-                print("\n=== Estado de las colas ===")
-                print(
-                    f"Cola simple 🔈 ({cola_simple.size()}): {[valor for valor in cola_simple]}"
-                )
-                print(
-                    f"Cola prioritaria 🚨 ({cola_prioridad.size()}): {[f'{estudiante.nombre} (P{prioridad})' for estudiante, prioridad, motivo in cola_prioridad]}"
-                )
-                print("\n=== Lista de inscritos ===")
-                if lista_inscritos.is_empty():
-                    print("No hay estudiantes inscritos aún. ⛔")
+                    print(enqueue_estudiante(cola_simple, cola_prioridad, cola_circular, lista_inscritos))
+            case "3":
+                print("\n=== Procesar siguientes turnos en cola ===")
+                if (
+                    lista_inscritos.get_list_name() is None
+                    and lista_inscritos.get_list_max_size() is None
+                ):
+                    print("⚠️ Configure el curso antes de procesar turnos.")
                 else:
-                    print(
-                        f"Estudiantes inscritos: ({lista_inscritos.size()}): {[f'{estudiante.nombre} (CI: {estudiante.ci_estudiante})' for estudiante in lista_inscritos]}"
-                    )
+                    atender_turnos(cola_simple, cola_prioridad, cola_circular, lista_inscritos)
+            case "4":
+                mostrar_estado_colas(cola_simple, cola_prioridad, cola_circular, lista_inscritos)
             case "5":
+                print("\n=== Registrar retiro de inscripción ===")
+                if lista_inscritos.is_empty():
+                    print("⚠️ No hay estudiantes inscritos para retirar. ⛔")
+                else:
+                    print(liberar_cupo(lista_inscritos))
+            case "6":
+                pass
+            case "8":
                 print("Saliendo...🚪")
                 break
             case _:
@@ -77,7 +89,7 @@ def configurar_curso(curso: ListaEnlazada):
     return f"Curso '{nombre_curso}' configurado exitosamente con {cupos} cupos. ✅"
 
 
-def enqueue_estudiante(cola_simple: ColaSimple, cola_prioridad: ColaPrioridad) -> str:
+def enqueue_estudiante(cola_simple: ColaSimple, cola_prioridad: ColaPrioridad, cola_circular: ColaCircular, lista_inscritos: ListaEnlazada) -> str:
     nombre = validar_input("Ingrese el nombre del estudiante: ")
     ci = validar_input("Ingrese la cédula de identidad del estudiante: ")
     has_prioridad = (
@@ -85,37 +97,123 @@ def enqueue_estudiante(cola_simple: ColaSimple, cola_prioridad: ColaPrioridad) -
     )
     nuevo_estudiante = Estudiante(nombre, ci)
     if has_prioridad:
-        return registrar_estudiante_prioridad(nuevo_estudiante, cola_prioridad)
+        return registrar_estudiante_prioridad(nuevo_estudiante, cola_prioridad, cola_circular, lista_inscritos)
     else:
-        return registrar_estudiante_normal(nuevo_estudiante, cola_simple)
+        return registrar_estudiante_normal(nuevo_estudiante, cola_simple, cola_circular, lista_inscritos)
 
 
 def registrar_estudiante_normal(
-    nuevo_estudiante: Estudiante, cola_simple: ColaSimple
+    nuevo_estudiante: Estudiante, cola_simple: ColaSimple, cola_circular: ColaCircular, lista_inscritos: ListaEnlazada
 ) -> str:
+    if lista_inscritos.get_list_max_size() is not None and lista_inscritos.size() >= lista_inscritos.get_list_max_size():
+        print("El curso ha alcanzado su capacidad máxima. No se pueden inscribir más estudiantes. ⛔")
+        print(f"El estudiante {nuevo_estudiante.nombre} será colocado en la cola circular para esperar su turno.")
+        cola_circular.enqueue(nuevo_estudiante)
+        return f"↳ ENQUEUE estudiante normal: {nuevo_estudiante.nombre} 🔈 (Cola Circular)"
     cola_simple.enqueue(nuevo_estudiante)
     return f"↳ ENQUEUE estudiante normal: {nuevo_estudiante.nombre} 🔈"
 
 
 def registrar_estudiante_prioridad(
-    nuevo_estudiante: Estudiante, cola_prioridad: ColaPrioridad
+    nuevo_estudiante: Estudiante, cola_prioridad: ColaPrioridad, cola_circular: ColaCircular, lista_inscritos: ListaEnlazada
 ) -> str:
     prioridad = validar_rango_prioridad("Ingrese la prioridad del estudiante (1-5): ")
     motivo_prioridad = validar_input("Ingrese el motivo de prioridad: ")
+    if lista_inscritos.get_list_max_size() is not None and lista_inscritos.size() >= lista_inscritos.get_list_max_size():
+        print("El curso ha alcanzado su capacidad máxima. No se pueden inscribir más estudiantes. ⛔")
+        print(f"El estudiante {nuevo_estudiante.nombre} será colocado en la cola circular para esperar su turno.")
+        cola_circular.enqueue(nuevo_estudiante)
+        return f"↳ ENQUEUE estudiante con prioridad: {nuevo_estudiante.nombre} (P{prioridad}) - Motivo: {motivo_prioridad} 🚨 (Cola Circular)"
     cola_prioridad.enqueue(nuevo_estudiante, prioridad, motivo_prioridad)
     return f"↳ ENQUEUE estudiante con prioridad: {nuevo_estudiante.nombre} (P{prioridad}) - Motivo: {motivo_prioridad} 🚨"
 
+def liberar_cupo(lista_inscritos: ListaEnlazada) -> str:
+    if lista_inscritos.is_empty():
+        return "No hay estudiantes inscritos para retirar. ⛔"
+    
+    print("\n=== Lista de inscritos ===")
+    for id_estudiante, estudiante in lista_inscritos:
+        print(f"ID {id_estudiante}: {estudiante.nombre} (CI: {estudiante.ci_estudiante})")
+    
+    ci_estudiante_retirar = validar_input("Ingrese la cédula del estudiante a retirar: ")
+    estudiante_retirado = None
+    for id_estudiante, estudiante in lista_inscritos:
+        if estudiante.ci_estudiante == ci_estudiante_retirar:
+            estudiante_retirado = estudiante
+            break
+    
+    if estudiante_retirado is None:
+        return f"No se encontró un estudiante con cédula {ci_estudiante_retirar}. ⛔"
+    
+    lista_inscritos.eliminar(id_estudiante)
+    
+    return f"✅ Estudiante retirado: {estudiante_retirado.nombre}. Se ha liberado un cupo. Cupos disponibles: {lista_inscritos.get_list_max_size() - lista_inscritos.size()}"
 
-def atender_siguiente_alerta(
-    cola_simple: ColaSimple, cola_prioridad: ColaPrioridad
-) -> str:
-    if not cola_prioridad.is_empty():
-        valor, prioridad = cola_prioridad.dequeue()
-        return f"Atendiendo alerta crítica: {valor} (P{prioridad}) 🚨"
-    elif not cola_simple.is_empty():
-        return f"Atendiendo alerta normal: {cola_simple.dequeue()} 🔈"
-    else:
-        return "No hay alertas para atender. ⛔"
+def mostrar_estado_colas(cola_simple: ColaSimple, cola_prioridad: ColaPrioridad, cola_circular: ColaCircular, lista_inscritos: ListaEnlazada):
+     print("\n=== Estado actual de inscritos y colas ===")
+     print("\n=== Estado de las colas ===")
+     print(
+         f"Cola simple 🔈 ({cola_simple.size()}): {[f'ID {id_estudiante}: {estudiante.nombre} (CI: {estudiante.ci_estudiante})' for id_estudiante, estudiante in cola_simple]}"
+     )
+     print(
+         f"Cola prioritaria 🚨 ({cola_prioridad.size()}): {[f'ID {id_estudiante}: {estudiante.nombre} (P{prioridad}) - Motivo: {motivo}' for id_estudiante, estudiante, prioridad, motivo in cola_prioridad]}"
+     )
+     
+     print(f"Cola circular 🔄 ({cola_circular.size()}): {[f'ID {id_estudiante}: {estudiante.nombre} (CI: {estudiante.ci_estudiante})' for id_estudiante, estudiante in cola_circular]}")
+     
+     print("\n=== Lista de inscritos ===")
+     if lista_inscritos.is_empty():
+         print("No hay estudiantes inscritos aún. ⛔")
+     else:
+         print(
+             f"Estudiantes inscritos: ({lista_inscritos.size()}): {[f'ID {id_estudiante}: {estudiante.nombre} (CI: {estudiante.ci_estudiante})' for id_estudiante, estudiante in lista_inscritos]}"
+         )
+
+def atender_turnos(
+    cola_simple: ColaSimple, cola_prioridad: ColaPrioridad, cola_circular: ColaCircular, lista_inscritos: ListaEnlazada
+):
+    if cola_prioridad.is_empty() and cola_circular.is_empty() and cola_simple.is_empty():
+        return "No hay estudiantes para atender. ⛔"
+    
+    while lista_inscritos.size() < lista_inscritos.get_list_max_size():
+        procesado = False
+        
+        # Procesar cola prioritaria
+        if not cola_prioridad.is_empty():
+            estudiante, prioridad, motivo_prioridad = cola_prioridad.dequeue()
+            lista_inscritos.insertar_final(estudiante)
+            print(f"Atendiendo estudiante prioritario: {estudiante.nombre} (P{prioridad}) - Motivo: {motivo_prioridad} 🚨")
+            procesado = True
+        
+        # Si hay espacio y cola circular tiene elementos
+        elif not cola_circular.is_empty():
+            estudiante = cola_circular.dequeue()
+            lista_inscritos.insertar_final(estudiante)
+            print(f"Atendiendo estudiante en cola circular: {estudiante.nombre} 🔄")
+            procesado = True
+        
+        # Si hay espacio y cola simple tiene elementos
+        elif not cola_simple.is_empty():
+            estudiante = cola_simple.dequeue()
+            lista_inscritos.insertar_final(estudiante)
+            print(f"Atendiendo estudiante normal: {estudiante.nombre} 🔈")
+            procesado = True
+        
+        # Si no se procesó nada, salir del ciclo
+        if not procesado:
+            break
+    
+    if lista_inscritos.size() >= lista_inscritos.get_list_max_size():
+        print("El curso ha alcanzado su capacidad máxima. No se pueden inscribir más estudiantes. ⛔")
+        print("Los siguientes estudiantes no pudieron ser inscritos y seran colocados en la cola circular para esperar su turno:")
+        for id_estudiante, estudiante, prioridad, motivo in cola_prioridad:
+            print(f"ID {id_estudiante}: {estudiante.nombre} (P{prioridad}) - Motivo: {motivo}")
+            cola_prioridad.dequeue()  # Eliminar de la cola de prioridad
+            cola_circular.enqueue(estudiante)
+        for id_estudiante, estudiante in cola_simple:
+            print(f"ID {id_estudiante}: {estudiante.nombre} (CI: {estudiante.ci_estudiante})")
+            cola_simple.dequeue()  # Eliminar de la cola simple
+            cola_circular.enqueue(estudiante)
 
 
 def validar_rango_prioridad(prioridad: str) -> int:

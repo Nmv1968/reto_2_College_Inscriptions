@@ -56,6 +56,5 @@ class ColaSimple:
     def __iter__(self):
         actual = self.frente
         while actual:
-            yield actual.estudiante
+            yield actual.id_estudiante, actual.estudiante
             actual = actual.siguiente
-
