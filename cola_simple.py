@@ -1,4 +1,5 @@
 from nodo import Nodo
+from estudiante import Estudiante
 
 
 # =============================================================================
@@ -18,7 +19,7 @@ class ColaSimple:
     # Lógica Enqueue Simple:
     # Inserta el nuevo elemento siempre al final de la cola (tail).
     # No considera prioridades, solo el orden cronológico de llegada.
-    def enqueue(self, valor: str):
+    def enqueue(self, valor: Estudiante):
         nuevo = Nodo(valor)
         if self.final:
             self.final.siguiente = nuevo

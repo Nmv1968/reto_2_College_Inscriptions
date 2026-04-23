@@ -27,6 +27,31 @@ def inscriptionMenu():
             case "1":
                 print("\n=== Configuración de curso ===")
                 print(configurar_curso(lista_inscritos))
+            case "2":
+                print("\n=== Registro de llegada de estudiante ===")
+                if (
+                    lista_inscritos.get_list_name() is None
+                    and lista_inscritos.get_list_max_size() is None
+                ):
+                    print("⚠️ Configure el curso antes de registrar estudiantes.")
+                else:
+                    print(enqueue_estudiante(cola_simple, cola_prioridad))
+            case "4":
+                print("\n=== Estado actual de inscritos y colas ===")
+                print("\n=== Estado de las colas ===")
+                print(
+                    f"Cola simple 🔈 ({cola_simple.size()}): {[valor for valor in cola_simple]}"
+                )
+                print(
+                    f"Cola prioritaria 🚨 ({cola_prioridad.size()}): {[f'{estudiante.nombre} (P{prioridad})' for estudiante, prioridad, motivo in cola_prioridad]}"
+                )
+                print("\n=== Lista de inscritos ===")
+                if lista_inscritos.is_empty():
+                    print("No hay estudiantes inscritos aún. ⛔")
+                else:
+                    print(
+                        f"Estudiantes inscritos: ({lista_inscritos.size()}): {[f'{estudiante.nombre} (CI: {estudiante.ci_estudiante})' for estudiante in lista_inscritos]}"
+                    )
             case "5":
                 print("Saliendo...🚪")
                 break
@@ -47,32 +72,38 @@ def validar_input(texto: str) -> str:
 def configurar_curso(curso: ListaEnlazada):
     nombre_curso = validar_input("Ingrese el nombre del curso: ")
     curso.set_list_name(nombre_curso)
-    return f"Curso '{nombre_curso}' configurado exitosamente. ✅"
+    cupos = int(validar_input("Ingrese el número de cupos disponibles: "))
+    curso.set_max_size(cupos)
+    return f"Curso '{nombre_curso}' configurado exitosamente con {cupos} cupos. ✅"
 
 
-def registrar_alerta(
-    tipo: str, cola_simple: ColaSimple, cola_prioridad: ColaPrioridad
+def enqueue_estudiante(cola_simple: ColaSimple, cola_prioridad: ColaPrioridad) -> str:
+    nombre = validar_input("Ingrese el nombre del estudiante: ")
+    ci = validar_input("Ingrese la cédula de identidad del estudiante: ")
+    has_prioridad = (
+        validar_input("¿El estudiante tiene prioridad? (s/n): ").lower() == "s"
+    )
+    nuevo_estudiante = Estudiante(nombre, ci)
+    if has_prioridad:
+        return registrar_estudiante_prioridad(nuevo_estudiante, cola_prioridad)
+    else:
+        return registrar_estudiante_normal(nuevo_estudiante, cola_simple)
+
+
+def registrar_estudiante_normal(
+    nuevo_estudiante: Estudiante, cola_simple: ColaSimple
 ) -> str:
-    match tipo:
-        case "normal":
-            return registrar_alerta_normal(cola_simple)
-        case "critica":
-            return registrar_alerta_critica(cola_prioridad)
-
-    return "Tipo de alerta no reconocido. ⛔"
+    cola_simple.enqueue(nuevo_estudiante)
+    return f"↳ ENQUEUE estudiante normal: {nuevo_estudiante.nombre} 🔈"
 
 
-def registrar_alerta_normal(cola_simple: ColaSimple) -> str:
-    alerta = validar_input("Ingrese la descripción de la alerta 🔈: ")
-    cola_simple.enqueue(alerta)
-    return "↳ ENQUEUE alerta normal: " + alerta + " 🔈"
-
-
-def registrar_alerta_critica(cola_prioridad: ColaPrioridad) -> str:
-    alerta = validar_input("Ingrese la descripción de la alerta 🚨: ")
-    prioridad = validar_rango_prioridad("Ingrese la prioridad de la alerta (1-5): ")
-    cola_prioridad.enqueue(alerta, prioridad)
-    return "↳ ENQUEUE alerta crítica: " + alerta + " 🚨"
+def registrar_estudiante_prioridad(
+    nuevo_estudiante: Estudiante, cola_prioridad: ColaPrioridad
+) -> str:
+    prioridad = validar_rango_prioridad("Ingrese la prioridad del estudiante (1-5): ")
+    motivo_prioridad = validar_input("Ingrese el motivo de prioridad: ")
+    cola_prioridad.enqueue(nuevo_estudiante, prioridad, motivo_prioridad)
+    return f"↳ ENQUEUE estudiante con prioridad: {nuevo_estudiante.nombre} (P{prioridad}) - Motivo: {motivo_prioridad} 🚨"
 
 
 def atender_siguiente_alerta(

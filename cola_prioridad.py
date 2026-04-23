@@ -1,4 +1,5 @@
 from nodo import Nodo
+from estudiante import Estudiante
 
 
 # =============================================================================
@@ -16,8 +17,8 @@ class ColaPrioridad:
     # No inserta al final. Recorre la lista buscando el lugar adecuado
     # según el valor de 'prioridad'. Los elementos con mayor prioridad
     # se desplazan hacia el frente de la cola.
-    def enqueue(self, valor: str, prioridad: int):
-        nuevo = Nodo(valor, prioridad)
+    def enqueue(self, valor: Estudiante, prioridad: int, motivo_prioridad: str = None):
+        nuevo = Nodo(valor, prioridad, motivo_prioridad)
         # Si la cola está vacía o el nuevo nodo tiene mayor prioridad que el frente entonces se inserta al frente
         if self.is_empty() or prioridad > self.frente.prioridad:
             nuevo.siguiente = self.frente
@@ -39,9 +40,10 @@ class ColaPrioridad:
             return None
         valor = self.frente.estudiante
         prioridad = self.frente.prioridad
+        motivo_prioridad = self.frente.motivo_prioridad
         self.frente = self.frente.siguiente
         self.length -= 1
-        return valor, prioridad
+        return valor, prioridad, motivo_prioridad
 
     # Comprueba si existen elementos en la cola.
     def is_empty(self):
@@ -55,5 +57,5 @@ class ColaPrioridad:
     def __iter__(self):
         actual = self.frente
         while actual:
-            yield actual.estudiante, actual.prioridad
+            yield actual.estudiante, actual.prioridad, actual.motivo_prioridad
             actual = actual.siguiente

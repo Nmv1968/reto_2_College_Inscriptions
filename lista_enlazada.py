@@ -51,7 +51,10 @@ class ListaEnlazada:
     def set_list_name(self, name):
         self.__list_name = name
         
-    def get_list_size(self):
+    def set_max_size(self, max_size):
+        self.__max_size = max_size
+    
+    def get_list_max_size(self):
         return self.__max_size
 
     def get_list_name(self):
