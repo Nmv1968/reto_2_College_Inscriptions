@@ -58,3 +58,29 @@ class ColaSimple:
         while actual:
             yield actual.id_estudiante, actual.estudiante
             actual = actual.siguiente
+
+    # Elimina un estudiante de la cola por su cédula de identidad.
+    def eliminar_por_ci(self, ci: str):
+        if self.is_empty():
+            return None
+        
+        # Si el estudiante a eliminar está al frente
+        if self.frente.estudiante.ci_estudiante == ci:
+            self.frente = self.frente.siguiente
+            if self.frente is None:
+                self.final = None
+            self.length -= 1
+            return True
+        
+        # Buscar el estudiante en el resto de la cola
+        actual = self.frente
+        while actual.siguiente:
+            if actual.siguiente.estudiante.ci_estudiante == ci:
+                actual.siguiente = actual.siguiente.siguiente
+                # Si se eliminó el último nodo, actualizar final
+                if actual.siguiente is None:
+                    self.final = actual
+                self.length -= 1
+                return True
+            actual = actual.siguiente
+        return False

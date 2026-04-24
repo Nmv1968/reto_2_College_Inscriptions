@@ -3,6 +3,11 @@ from cola_prioridad import ColaPrioridad
 from cola_circular import ColaCircular
 from estudiante import Estudiante
 from lista_enlazada import ListaEnlazada
+from stack import Stack, Accion
+
+
+# Pila de historial para deshacer acciones
+historial_acciones = Stack()
 
 
 def inscriptionMenu():
@@ -66,7 +71,8 @@ def inscriptionMenu():
                 print("\n=== Atender casos prioritarios ===")
                 atender_casos_prioritarios(cola_prioridad, cola_circular, lista_inscritos)
             case "7":
-                pass
+                print("\n=== Deshacer última acción 📊")
+                print(deshacer_accion(cola_simple, cola_prioridad, cola_circular, lista_inscritos))
             case "8":
                 print("Saliendo...🚪")
                 break
@@ -89,6 +95,15 @@ def configurar_curso(curso: ListaEnlazada):
     curso.set_list_name(nombre_curso)
     cupos = int(validar_input("Ingrese el número de cupos disponibles: "))
     curso.set_max_size(cupos)
+    
+    # Registrar acción en el historial
+    accion = Accion(
+        tipo="configurar_curso",
+        datos={"nombre_curso": nombre_curso, "cupos": cupos},
+        descripcion=f"Configurar curso '{nombre_curso}' con {cupos} cupos"
+    )
+    historial_acciones.push(accion)
+    
     return f"Curso '{nombre_curso}' configurado exitosamente con {cupos} cupos. ✅"
 
 
@@ -109,6 +124,15 @@ def registrar_estudiante_normal(
     nuevo_estudiante: Estudiante, cola_simple: ColaSimple, cola_circular: ColaCircular, lista_inscritos: ListaEnlazada
 ) -> str:
     cola_simple.enqueue(nuevo_estudiante)
+    
+    # Registrar acción en el historial
+    accion = Accion(
+        tipo="enqueue_normal",
+        datos={"nombre": nuevo_estudiante.nombre, "ci": nuevo_estudiante.ci_estudiante},
+        descripcion=f"Registro de estudiante normal: {nuevo_estudiante.nombre}"
+    )
+    historial_acciones.push(accion)
+    
     return f"↳ ENQUEUE estudiante normal: {nuevo_estudiante.nombre} 🔈"
 
 
@@ -118,6 +142,15 @@ def registrar_estudiante_prioridad(
     prioridad = validar_rango_prioridad("Ingrese la prioridad del estudiante (1-5): ")
     motivo_prioridad = validar_input("Ingrese el motivo de prioridad: ")
     cola_prioridad.enqueue(nuevo_estudiante, prioridad, motivo_prioridad)
+    
+    # Registrar acción en el historial
+    accion = Accion(
+        tipo="enqueue_prioridad",
+        datos={"nombre": nuevo_estudiante.nombre, "ci": nuevo_estudiante.ci_estudiante, "prioridad": prioridad, "motivo": motivo_prioridad},
+        descripcion=f"Registro de estudiante prioritario: {nuevo_estudiante.nombre} (P{prioridad})"
+    )
+    historial_acciones.push(accion)
+    
     return f"↳ ENQUEUE estudiante con prioridad: {nuevo_estudiante.nombre} (P{prioridad}) - Motivo: {motivo_prioridad} 🚨"
 
 def liberar_cupo(lista_inscritos: ListaEnlazada, cola_prioridad: ColaPrioridad, cola_circular: ColaCircular) -> str:
@@ -130,16 +163,26 @@ def liberar_cupo(lista_inscritos: ListaEnlazada, cola_prioridad: ColaPrioridad, 
     
     ci_estudiante_retirar = validar_input("Ingrese la cédula del estudiante a retirar: ")
     estudiante_retirado = None
+    id_estudiante_retirado = None
     for id_estudiante, estudiante in lista_inscritos:
         if estudiante.ci_estudiante == ci_estudiante_retirar:
             estudiante_retirado = estudiante
+            id_estudiante_retirado = id_estudiante
             break
     
     if estudiante_retirado is None:
         return f"No se encontró un estudiante con cédula {ci_estudiante_retirar}. ⛔"
     
-    lista_inscritos.eliminar(id_estudiante)
+    lista_inscritos.eliminar(id_estudiante_retirado)
     print(f"✅ Estudiante retirado: {estudiante_retirado.nombre}. Se ha liberado un cupo.")
+
+    # Registrar acción en el historial
+    accion = Accion(
+        tipo="liberar_cupo",
+        datos={"nombre": estudiante_retirado.nombre, "ci": estudiante_retirado.ci_estudiante, "id_estudiante": id_estudiante_retirado},
+        descripcion=f"Retiro de inscripción: {estudiante_retirado.nombre}"
+    )
+    historial_acciones.push(accion)
 
     # Reasigna cupo
     if not cola_prioridad.is_empty():
@@ -187,6 +230,19 @@ def atender_turnos(
         if not cola_prioridad.is_empty():
             estudiante, prioridad, motivo_prioridad = cola_prioridad.dequeue()
             lista_inscritos.insertar_final(estudiante)
+            # Registrar cada estudiante atendido individualmente en el historial
+            accion = Accion(
+                tipo="atender",
+                datos={
+                    "nombre": estudiante.nombre,
+                    "ci": estudiante.ci_estudiante,
+                    "tipo": "prioridad",
+                    "prioridad": prioridad,
+                    "motivo": motivo_prioridad
+                },
+                descripcion=f"Atender estudiante prioritario: {estudiante.nombre} (P{prioridad})"
+            )
+            historial_acciones.push(accion)
             print(f"Atendiendo estudiante prioritario: {estudiante.nombre} (P{prioridad}) - Motivo: {motivo_prioridad} 🚨")
             procesado = True
         
@@ -194,6 +250,17 @@ def atender_turnos(
         elif not cola_simple.is_empty():
             estudiante = cola_simple.dequeue()
             lista_inscritos.insertar_final(estudiante)
+            # Registrar cada estudiante atendido individualmente en el historial
+            accion = Accion(
+                tipo="atender",
+                datos={
+                    "nombre": estudiante.nombre,
+                    "ci": estudiante.ci_estudiante,
+                    "tipo": "normal"
+                },
+                descripcion=f"Atender estudiante normal: {estudiante.nombre}"
+            )
+            historial_acciones.push(accion)
             print(f"Atendiendo estudiante normal: {estudiante.nombre} 🔈")
             procesado = True
 
@@ -236,6 +303,19 @@ def atender_casos_prioritarios(cola_prioridad: ColaPrioridad, cola_circular: Col
         if not cola_prioridad.is_empty():
             estudiante, prioridad, motivo_prioridad = cola_prioridad.dequeue()
             lista_inscritos.insertar_final(estudiante)
+            # Registrar cada estudiante atendido individualmente en el historial
+            accion = Accion(
+                tipo="atender_prioritario",
+                datos={
+                    "nombre": estudiante.nombre,
+                    "ci": estudiante.ci_estudiante,
+                    "tipo": "prioridad",
+                    "prioridad": prioridad,
+                    "motivo": motivo_prioridad
+                },
+                descripcion=f"Atender caso prioritario: {estudiante.nombre} (P{prioridad})"
+            )
+            historial_acciones.push(accion)
             print(f"Atendiendo estudiante prioritario: {estudiante.nombre} (P{prioridad}) - Motivo: {motivo_prioridad} 🚨")
             procesado = True
         
@@ -243,6 +323,17 @@ def atender_casos_prioritarios(cola_prioridad: ColaPrioridad, cola_circular: Col
         elif not cola_circular.is_empty():
             estudiante = cola_circular.dequeue()
             lista_inscritos.insertar_final(estudiante)
+            # Registrar cada estudiante atendido individualmente en el historial
+            accion = Accion(
+                tipo="atender_prioritario",
+                datos={
+                    "nombre": estudiante.nombre,
+                    "ci": estudiante.ci_estudiante,
+                    "tipo": "circular"
+                },
+                descripcion=f"Atender estudiante en espera: {estudiante.nombre}"
+            )
+            historial_acciones.push(accion)
             print(f"Atendiendo estudiante en cola circular: {estudiante.nombre} 🔄")
             procesado = True
         
@@ -273,6 +364,92 @@ def validar_rango_prioridad(prioridad: str) -> int:
         except ValueError:
             print("Error: Debe ingresar un número entero. ⛔")
     return valor_prioridad
+
+
+def deshacer_accion(cola_simple: ColaSimple, cola_prioridad: ColaPrioridad, cola_circular: ColaCircular, lista_inscritos: ListaEnlazada) -> str:
+    """Deshace la última acción registrada en el historial."""
+    
+    if historial_acciones.is_empty():
+        return "No hay acciones para deshacer. ⛔"
+    
+    # Confirmar deshacer
+    print(f"Última acción: {historial_acciones.peek()}")
+    confirm = validar_input("¿Está seguro que desea deshacer la última acción? (s/n): ").lower()
+    
+    if confirm != "s":
+        return "Operación de deshacer cancelada. ⛔"
+    
+    # Extraer la acción del historial
+    accion = historial_acciones.pop()
+    
+    # Procesar según el tipo de acción
+    match accion.tipo:
+        case "configurar_curso":
+            # Reiniciar la configuración del curso
+            lista_inscritos.set_list_name(None)
+            lista_inscritos.set_max_size(0)
+            return f"Acción deshecha: Se ha eliminado la configuración del curso '{accion.datos['nombre_curso']}'. ✅"
+        
+        case "enqueue_normal":
+            # Eliminar al estudiante de la cola simple
+            nombre = accion.datos["nombre"]
+            ci = accion.datos["ci"]
+            # Buscar y eliminar el estudiante de la cola simple
+            for id_estudiante, estudiante in cola_simple:
+                if estudiante.ci_estudiante == ci:
+                    cola_simple.eliminar_por_ci(ci)
+                    return f"Acción deshecha: Estudiante normal '{nombre}' eliminado de la cola. ✅"
+            return f"No se pudo deshacer: Estudiante '{nombre}' no encontrado en la cola. ⛔"
+        
+        case "enqueue_prioridad":
+            # Eliminar al estudiante de la cola de prioridad
+            nombre = accion.datos["nombre"]
+            ci = accion.datos["ci"]
+            prioridad = accion.datos["prioridad"]
+            # Buscar y eliminar el estudiante de la cola de prioridad
+            for id_estudiante, estudiante, prioridad, motivo_prioridad in cola_prioridad:
+                if estudiante.ci_estudiante == ci:
+                    cola_prioridad.eliminar_por_ci(ci)
+                    return f"Acción deshecha: Estudiante prioritario '{nombre}' (P{prioridad}) eliminado de la cola. ✅"
+            return f"No se pudo deshacer: Estudiante '{nombre}' no encontrado en la cola de prioridad. ⛔"
+        
+        case "atender" | "atender_prioritario":
+            # Eliminar al estudiante de la lista de inscritos
+            ci = accion.datos["ci"]
+            tipo = accion.datos["tipo"]
+            nombre = accion.datos["nombre"]
+            
+            # Buscar y eliminar el estudiante de la lista de inscritos
+            for id_est, est in lista_inscritos:
+                if est.ci_estudiante == ci:
+                    lista_inscritos.eliminar(id_est)
+                    # Regresar el estudiante a su cola correspondiente
+                    if tipo == "prioridad":
+                        prioridad = accion.datos.get("prioridad", 1)
+                        motivo = accion.datos.get("motivo", "")
+                        est = Estudiante(nombre, ci)
+                        cola_prioridad.enqueue(est, prioridad, motivo)
+                        return f"Acción deshecha: Estudiante prioritario '{nombre}' removido de inscritos y regresado a cola de prioridad. ✅"
+                    elif tipo == "normal":
+                        est = Estudiante(nombre, ci)
+                        cola_simple.enqueue(est)
+                        return f"Acción deshecha: Estudiante normal '{nombre}' removido de inscritos y regresado a cola simple. ✅"
+                    elif tipo == "circular":
+                        est = Estudiante(nombre, ci)
+                        cola_circular.enqueue(est)
+                        return f"Acción deshecha: Estudiante '{nombre}' removido de inscritos y regresado a cola circular. ✅"
+            return f"No se pudo deshacer: Estudiante '{nombre}' no encontrado en la lista de inscritos. ⛔"
+        
+        case "liberar_cupo":
+            # Reintegrar al estudiante a la lista de inscritos
+            nombre = accion.datos["nombre"]
+            ci = accion.datos["ci"]
+            est = Estudiante(nombre, ci)
+            lista_inscritos.insertar_final(est)
+            return f"Acción deshecha: Estudiante '{nombre}' reintegrado a la lista de inscritos. ✅"
+        
+        case _:
+            return f"Tipo de acción desconocido: {accion.tipo}. No se puede deshacer. ⛔"
 
 
 # Función principal que inicia el menú de operaciones
