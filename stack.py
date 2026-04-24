@@ -1,86 +1,145 @@
+"""
+================================================================================
+MÓDULO: stack.py
+================================================================================
+Este módulo implementa una PILA (STACK) y la clase Accion para el sistema de
+deshacer acciones (undo).
+
+Estructura de datos LIFO (Last In, First Out) - "Último en entrar,
+primero en salir".
+
+Funcionamiento:
+- Cada acción que se hace se "empuja" a la pila
+- Para deshacer, se remueve la última acción (la más reciente)
+
+LÓGICA: "El último en entrar, primero en salir"
+================================================================================
+"""
+
+from datetime import datetime
 from nodo import Nodo
 
 
-# =============================================================================
-# Clase Accion: Representa una acción ejecutada que puede ser deshecha.
-# Contiene el tipo de acción, los datos relevantes y la descripción.
-# =============================================================================
 class Accion:
+    """
+    Representa una acción ejecutada que puede ser deshecha.
+    
+    Esta clase almacena toda la información necesaria para revertir
+    una operación del sistema de inscripciones.
+    
+    Atributos:
+    - tipo: Tipo de acción realizada
+      * "configurar_curso" - Crear un nuevo curso
+      * "enqueue_normal" - Inscribir en cola normal
+      * "enqueue_prioridad" - Inscribir con prioridad
+      * "atender" - Atender un estudiante
+      * "liberar_cupo" - Liberar un estudiante del curso
+    - datos: Diccionario con datos necesarios para deshacer
+    - descripcion: Texto legible describiendo la acción
+    - fecha_hora: Timestamp automático de cuándo se ejecutó
+    """
+    
     def __init__(self, tipo: str, datos: dict, descripcion: str):
-        self.tipo = tipo  # Tipos: "configurar_curso", "enqueue_normal", "enqueue_prioridad", "atender", "liberar_cupo"
-        self.datos = datos  # Datos necesarios para deshacer la acción
-        self.descripcion = descripcion  # Descripción legible de la acción
+        self.tipo = tipo
+        self.datos = datos          # Datos para revertir la acción
+        self.descripcion = descripcion  # Descripción legible
+        self.fecha_hora = datetime.now()  # Timestamp automático
 
     def __repr__(self):
-        return f"Accion({self.tipo}: {self.descripcion})"
+        """Representación legible para debugging."""
+        hora_str = self.fecha_hora.strftime("%H:%M:%S")
+        return f"[{hora_str}] {self.tipo}: {self.descripcion}"
 
 
-# =============================================================================
-# Clase Stack: Implementa una pila dinámica usando una lista enlazada.
-# La pila tiene un tope (top) que apunta al último elemento agregado.
-# =============================================================================
 class Stack:
-    # Constructor de la clase Stack, inicializa la pila con tope None y tamaño 0
+    """
+    Atributos:
+    - top: Puntero al nodo en la cima de la pila (último elemento agregado)
+    - _size: Cantidad de acciones en el historial
+    
+    Métodos principales:
+    - push(): Agrega una acción al historial
+    - pop(): Remueve y retorna la última acción (para deshacer)
+    - peek(): Ve la última acción sin removerla
+    - is_empty(): Verifica si hay acciones para deshacer
+    
+    Relación con el reto:
+    - Cada operación del menú se registra como una "Accion"
+    - Al elegir "Deshacer", se ejecuta pop() para obtener la última acción
+    - Los datos de la acción permiten revertirla correctamente
+    """
+    
     def __init__(self):
-        # Inicializa el tope de la pila
+        # Top = cima de la pila (último elemento agregado)
         self.top = None
-        # Inicializa el tamaño de la pila
+        # Contador de elementos
         self._size = 0
 
-    # Método push: Agrega un nuevo elemento a la pila.
-    # Crea un nuevo nodo con el valor dado, enlaza su 'next' al tope actual,
-    # y actualiza el tope para que apunte al nuevo nodo, manteniendo la cadena enlazada.
     def push(self, value):
-        # Crea un nuevo nodo con el valor y el tope actual como siguiente
-        nodo = Nodo(value, None, None)  # Usamos el Nodo genérico con valor directo
-        nodo.valor = value  # Asignamos el valor directamente
-        nodo.siguiente = self.top
-        # Actualiza el tope para que apunte al nuevo nodo
-        self.top = nodo
-        # Incrementa el tamaño de la pila
+        """
+        Agrega una nueva acción a la cima de la pila.
+        
+        Proceso:
+        1. Crea un nuevo nodo con la acción
+        2. El nuevo nodo apunta al anterior top
+        3. Actualiza el top para que apunte al nuevo nodo
+        4. Incrementa el tamaño
+        
+        Nota: El orden de inserción importa - el último push será el primero en pop.
+        """
+        nodo = Nodo(value, None, None)
+        nodo.valor = value
+        nodo.siguiente = self.top  # El nuevo apunta al anterior top
+        self.top = nodo            # El nuevo se convierte en el top
         self._size += 1
 
-    # Método pop: Remueve y devuelve el elemento del tope de la pila.
     def pop(self):
-        # Verifica si la pila está vacía
+        """
+        Remueve y retorna la acción de la cima (la más reciente).
+        
+        Este es el método usado para "Deshacer" - obtiene la última
+        acción para poder revertirla.
+        
+        Proceso:
+        1. Verifica si la pila está vacía
+        2. Obtiene el valor del top
+        3. Mueve el top al siguiente nodo
+        4. Decrementa el tamaño
+        5. Retorna la acción extraída
+        """
         if self.is_empty():
-            # Si está vacía, retorna None
             return None
-        # Obtiene el valor del tope
+        
         extracted_value = self.top.valor
-        # Actualiza el tope al siguiente nodo
         self.top = self.top.siguiente
-        # Decrementa el tamaño de la pila
         self._size -= 1
-        # Retorna el valor extraído
         return extracted_value
 
-    # Método is_empty: Verifica si la pila está vacía.
     def is_empty(self):
-        # Retorna True si el tope es None, indicando pila vacía
+        """Verifica si no hay acciones para deshacer."""
         return self.top is None
 
-    # Método peek: Devuelve el valor del tope sin removerlo.
     def peek(self):
-        # Verifica si la pila está vacía
+        """
+        Ve la acción de la cima SIN removerla.
+        
+        Útil para mostrar qué acción se deshará next sin ejecutarla.
+        """
         if self.is_empty():
-            # Si está vacía, retorna None
             return None
-        # Retorna el valor del tope sin removerlo
         return self.top.valor
 
-    # Método size: Devuelve el número de elementos en la pila.
     def size(self):
-        # Retorna el tamaño actual de la pila
+        """Retorna la cantidad de acciones en el historial."""
         return self._size
 
-    # __iter__: Permite iterar sobre los elementos de la pila desde el tope hacia abajo.
     def __iter__(self):
-        # Comenzamos el recorrido desde el nodo que está en el tope (cima)
+        """
+        Itera sobre las acciones desde la más reciente hasta la más antigua.
+        
+        Útil para mostrar el historial de acciones al usuario.
+        """
         current_node = self.top
-        # Mientras el nodo actual no sea None (es decir, queden elementos)
         while current_node is not None:
-            # 'yield' entrega el valor actual al ciclo 'for' sin detener la función
             yield current_node.valor
-            # Movemos el puntero al siguiente nodo de la lista enlazada
             current_node = current_node.siguiente

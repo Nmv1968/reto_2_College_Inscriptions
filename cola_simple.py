@@ -1,25 +1,56 @@
+"""
+================================================================================
+MÓDULO: cola_simple.py
+================================================================================
+COLA SIMPLE (FIFO - First In, First Out).
+
+Es como una fila real en un banco o supermercado:
+- El PRIMERO que llega es el PRIMERO en ser atendido
+- Los nuevos elementos se agregan al FINAL de la cola
+- Los elementos se removen desde el FRENTE de la cola
+- Primero en entrar, primero en salir
+================================================================================
+"""
+
 from nodo import Nodo
 from estudiante import Estudiante
 
-
-# =============================================================================
-# Clase ColaSimple: Implementa una estructura FIFO (First-In, First-Out).
-# =============================================================================
 class ColaSimple:
-    # Inicializa una cola vacía con referencias al frente, final y contador.
+    """
+    Cola Simple (FIFO): Implementa el comportamiento de una cola real.
+    
+    Atributos:
+    - frente: Puntero al primer elemento (el que será atendido primero)
+    - final: Puntero al último elemento (donde se agregan nuevos elementos)
+    - length: Cantidad de estudiantes en la cola
+    
+    Comportamiento:
+    - enqueue(): Agrega al final
+    - dequeue(): Remueve del frente
+    """
+    
     def __init__(self):
+        # Frente = primer elemento en ser atendido (None si cola vacía)
         self.frente = None
+        # Final = último elemento agregado (None si cola vacía)
         self.final = None
+        # Contador de elementos
         self.length = 0
 
-    # Verifica si la cola no tiene elementos (frente es None).
     def is_empty(self):
+        """Verifica si la cola no tiene elementos."""
         return self.frente is None
 
-    # Lógica Enqueue Simple:
-    # Inserta el nuevo elemento siempre al final de la cola (tail).
-    # No considera prioridades, solo el orden cronológico de llegada.
     def enqueue(self, valor: Estudiante):
+        """
+        Agrega un estudiante al FINAL de la cola.
+        
+        Proceso:
+        1. Crea un nuevo nodo con el estudiante
+        2. Si la cola está vacía, frente y final apuntan al nuevo nodo
+        3. Si ya hay elementos, el actual 'final' apunta al nuevo nodo
+        4. Actualiza 'final' para que apunte al nuevo nodo
+        """
         nuevo = Nodo(valor)
         if self.final:
             self.final.siguiente = nuevo
@@ -29,12 +60,18 @@ class ColaSimple:
         self.length += 1
         return valor
 
-    # Remueve y retorna el elemento que está al frente de la cola.
-    # Sigue el principio FIFO permitiendo avanzar al siguiente nodo.
     def dequeue(self):
-        # Verifica si la cola está vacía antes de remover un elemento.
+        """
+        Remueve y retorna el estudiante del FRENTE de la cola.
+        
+        Proceso:
+        1. Verifica si la cola está vacía
+        2. Obtiene el estudiante del frente
+        3. Si solo había un elemento, limpia frente y final
+        4. Si había más, mueve frente al siguiente elemento
+        5. Retorna el estudiante atendido
+        """
         if self.is_empty():
-            print("⚠️ Underflow: cola vacía.")
             return None
         valor = self.frente.estudiante
         self.frente = self.frente.siguiente
@@ -44,23 +81,23 @@ class ColaSimple:
         self.length -= 1
         return valor
 
-    # Retorna el valor al frente de la cola sin removerlo.
     def front(self):
+        """Retorna el valor al frente de la cola sin removerlo."""
         return None if self.is_empty() else self.frente.estudiante
 
-    # Retorna la cantidad total de elementos actualmente en la cola.
     def size(self):
+        """Retorna la cantidad de estudiantes en la cola."""
         return self.length
 
-    # Permite recorrer los valores de la cola de forma iterativa (ej: en un for).
     def __iter__(self):
+        """Permite iterar sobre la cola desde el frente hacia el final."""
         actual = self.frente
         while actual:
             yield actual.id_estudiante, actual.estudiante
             actual = actual.siguiente
 
     # Elimina un estudiante de la cola por su cédula de identidad.
-    def eliminar_por_ci(self, ci: str):
+    def remove_by_ci(self, ci: str):
         if self.is_empty():
             return None
         
