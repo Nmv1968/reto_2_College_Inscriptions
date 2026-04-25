@@ -55,7 +55,8 @@ def main_menu():
 
     # Ciclo principal del programa
     while True:
-        print("\n=== 🏫 Centro de Inscripciones Universitarias 🏫 ===")
+        header = f"=== 🏫 Centro de Inscripciones: {lista_inscritos.list_name} 🏫 ===" if lista_inscritos.is_course_configurated else "=== 🏫 Centro de Inscripciones Universitarias 🏫 ==="
+        print(f"\n{header}")
         print("1. Configurar curso 🔈")
         print("2. Llegada estudiante 🚨")
         print("3. Procesar siguientes turnos en cola 🏁")
@@ -65,7 +66,7 @@ def main_menu():
         print("7. Deshacer última acción ↩️")
         print("8. Ver historial de acciones 📜")
         print("9. Salir 🚪")
-        print("\n =============================================================")
+        print("\n" + "=" * len(header))
         opcion = validar_input("Seleccione una opción: ")
 
         # Bloque de opciones del menú
@@ -78,29 +79,29 @@ def main_menu():
                     print(configurar_curso(lista_inscritos, historial_acciones))
             
             case "2":
-                print("\n=== Registro de llegada de estudiante ===")
                 if verificar_configuracion(lista_inscritos):
+                    print(f"\n=== Registro de llegada: {lista_inscritos.list_name} ===")
                     print(registrar_llegada_estudiante(cola_simple, cola_prioridad, historial_acciones))
             
             case "3":
-                print("\n=== Procesar siguientes turnos en cola ===")
                 if verificar_configuracion(lista_inscritos):
+                    print(f"\n=== Procesando turnos para: {lista_inscritos.list_name} ===")
                     atender_turnos(cola_simple, cola_prioridad, cola_circular, lista_inscritos, historial_acciones)
             
             case "4":
                 mostrar_estado_colas(cola_simple, cola_prioridad, cola_circular, lista_inscritos)
             
             case "5":
-                print("\n=== Registrar retiro de inscripción ===")
                 if verificar_configuracion(lista_inscritos):
                     if lista_inscritos.is_empty():
-                        print("⚠️ No hay estudiantes inscritos para retirar. ⛔")
+                        print(f"⚠️ No hay estudiantes inscritos en '{lista_inscritos.list_name}' para retirar. ⛔")
                     else:
+                        print(f"\n=== Retiro de inscripción: {lista_inscritos.list_name} ===")
                         print(liberar_cupo(lista_inscritos, cola_prioridad, cola_circular, historial_acciones))
             
             case "6":
-                print("\n=== Atender casos prioritarios ===")
                 if verificar_configuracion(lista_inscritos):
+                    print(f"\n=== Casos prioritarios para: {lista_inscritos.list_name} ===")
                     atender_casos_prioritarios(cola_prioridad, cola_circular, lista_inscritos, historial_acciones)
             
             case "7":
@@ -369,9 +370,9 @@ def mostrar_estado_colas(cola_simple: ColaSimple, cola_prioridad: ColaPrioridad,
     - Cola circular: Estudiantes en espera cuando el curso está lleno
     - Lista de inscritos: Estudiantes matriculados en el curso
     """
-    print("\n" + "="*45)
-    print(" 📊 ESTADO ACTUAL DEL SISTEMA 📊")
-    print("="*45)
+    print("\n" + "="*50)
+    print(f" 📊 ESTADO ACTUAL: {lista_inscritos.list_name} 📊")
+    print("="*50)
     
     # 1. Cola Prioritaria
     print(f"\nCola prioritaria 🚨 ({cola_prioridad.size()}):")
@@ -517,6 +518,9 @@ def atender_turnos(
     # Si el curso está lleno, transferir estudiantes a cola circular
     if lista_inscritos.size() >= lista_inscritos.max_size:
         print("\nEl curso ha alcanzado su capacidad máxima. No se pueden inscribir más estudiantes. ⚠️")
+        if cola_prioridad.is_empty() and cola_simple.is_empty() and cola_circular.is_empty():
+            print("No hay estudiantes para transferir a la cola circular. ⛔")
+            return
         print("Los siguientes estudiantes serán colocados en la cola circular para esperar su turno:")
         transferir_a_cola_circular(cola_prioridad, cola_circular)
         transferir_a_cola_circular(cola_simple, cola_circular)

@@ -1,209 +1,189 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>UML Activity Diagram - Sistema de Inscripciones</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flujo de Colas - Sistema de Inscripciones</title>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#e1f5fe',
+          primaryTextColor: '#0277bd',
+          primaryBorderColor: '#0288d1',
+          lineColor: '#546e7a',
+          secondaryColor: '#f1f8e9',
+          tertiaryColor: '#fffde7'
+        }
+      });
+    </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7fafc;
-            display: flex;
-            justify-content: center;
-            padding: 50px;
-            margin: 0;
-        }
+      @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap");
 
-        .diagram-container {
-            background-color: #ffffff;
-            padding: 60px;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-        }
+      :root {
+        --bg-color: #f8fafc;
+        --card-bg: #ffffff;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --primary: #3b82f6;
+        --accent: #10b981;
+      }
 
-        h1 {
-            color: #1a202c;
-            font-size: 24px;
-            margin-bottom: 50px;
-            text-align: center;
-            font-weight: 700;
-        }
+      body {
+        font-family: "Outfit", sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 20px;
+        line-height: 1.6;
+      }
 
-        /* UML Styles */
-        .uml-action { fill: #ffffff; stroke: #2d3748; stroke-width: 1.5; }
-        .uml-decision { fill: #ffffff; stroke: #2d3748; stroke-width: 1.5; }
-        .uml-line { fill: none; stroke: #4a5568; stroke-width: 1.2; marker-end: url(#arrowhead); }
-        .uml-return { fill: none; stroke: #cbd5e0; stroke-width: 1; stroke-dasharray: 5,3; marker-end: url(#arrowhead); }
-        
-        /* Typography */
-        .uml-text-bold { fill: #1a202c; font-size: 13px; font-weight: 700; }
-        .uml-text-small { fill: #4a5568; font-size: 11px; font-weight: 400; }
-        .uml-label { fill: #718096; font-size: 10px; font-weight: 600; font-style: italic; }
+      .container {
+        max-width: 1000px;
+        width: 100%;
+        background: var(--card-bg);
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.04);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+      }
 
-        /* Symbols */
-        .uml-start { fill: #1a202c; }
-        .uml-end-outer { fill: none; stroke: #1a202c; stroke-width: 2; }
-        .uml-end-inner { fill: #1a202c; }
-        
-        /* Specialized Node Colors */
-        .color-menu { fill: #fffdf2; stroke: #d69e2e; stroke-width: 2; }
-        .color-enroll { fill: #f0fff4; stroke: #38a169; }
-        .color-prio { fill: #fffaf0; stroke: #dd6b20; }
-        .color-simple { fill: #ebf8ff; stroke: #3182ce; }
-        .color-hist { fill: #faf5ff; stroke: #805ad5; }
+      header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0 0 10px 0;
+        background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      p.subtitle {
+        color: var(--text-muted);
+        font-size: 1.1rem;
+      }
+
+      .mermaid-wrapper {
+        background: #fdfdfd;
+        padding: 30px;
+        border-radius: 16px;
+        border: 1px dashed #e2e8f0;
+        margin-bottom: 40px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        padding: 25px;
+        background: #f1f5f9;
+        border-radius: 16px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+      }
+
+      .dot.prio { background: #e1f5fe; border: 2px solid #0288d1; }
+      .dot.simple { background: #ebf8ff; border: 2px solid #3182ce; }
+      .dot.list { background: #c8e6c9; border: 2px solid #2e7d32; }
+      .dot.wait { background: #fff3e0; border: 2px solid #ef6c00; }
+
+      footer {
+        margin-top: 30px;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        text-align: center;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Diagrama de Flujo de Colas</h1>
+        <p class="subtitle">Lógica de atención y priorización del sistema</p>
+      </header>
 
-    <div class="diagram-container">
-        <h1>Diagrama de Actividades UML: Proceso de Inscripción Universitaria</h1>
-        
-        <svg width="1150" height="1550" viewBox="0 0 1150 1550">
-            <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="#4a5568" />
-                </marker>
-            </defs>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+flowchart TD
+    %% Definición de Nodos
+    Start((Llegada)) --> Decision{¿Prioridad?}
+    
+    Decision -- Sí --> Prio[<b>Cola Prioridad</b><br/>Lógica Dinámica]
+    Decision -- No --> Simple[<b>Cola Simple</b><br/>Lógica FIFO]
+    
+    Prio --> Atender[[Procesar Turno]]
+    Simple --> Atender
+    
+    Atender --> Cupo{¿Cupos?}
+    
+    Cupo -- Sí --> Lista[<b>Lista Inscritos</b><br/>Permanencia]
+    Cupo -- No --> Espera[<b>Cola Circular</b><br/>Lista de Espera]
+    
+    %% Reasignación
+    Lista -- Retiro --> Libera[Libera Cupo]
+    Libera --> ReasignaPrio{¿Hay\nPrioridad?}
+    ReasignaPrio -- Sí --> Atender
+    ReasignaPrio -- No --> ReasignaWait{¿Hay\nEspera?}
+    ReasignaWait -- Sí --> Atender
+    ReasignaWait -- No --> End((Fin))
 
-            <!-- ======================================================
-                 1. INICIO Y CONFIGURACIÓN
-                 ====================================================== -->
-            <circle class="uml-start" cx="575" cy="40" r="10" />
-            <path class="uml-line" d="M 575 50 L 575 80" />
+    %% Estilos de Mermaid
+    classDef default font-family:Outfit,font-size:14px;
+    classDef primary fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#0277bd;
+    classDef success fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+    classDef warning fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#e65100;
+    
+    class Prio,Simple primary;
+    class Lista success;
+    class Espera warning;
+        </pre>
+      </div>
 
-            <rect class="uml-action" x="450" y="80" width="250" height="50" rx="15" />
-            <text class="uml-text-bold" x="575" y="105" text-anchor="middle">Inicializar Sistema</text>
-            <text class="uml-text-small" x="575" y="120" text-anchor="middle">Definir Cupos y Nombre del Curso</text>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="dot prio"></div>
+          <span>Cola de Prioridad</span>
+        </div>
+        <div class="legend-item">
+          <div class="dot simple"></div>
+          <span>Cola Estándar (FIFO)</span>
+        </div>
+        <div class="legend-item">
+          <div class="dot list"></div>
+          <span>Estudiantes Inscritos</span>
+        </div>
+        <div class="legend-item">
+          <div class="dot wait"></div>
+          <span>Lista de Espera Circular</span>
+        </div>
+      </div>
 
-            <path class="uml-line" d="M 575 130 L 575 180" />
-
-            <!-- ======================================================
-                 2. NODO CENTRAL: MENÚ (DIVERGENCIA)
-                 ====================================================== -->
-            <polygon class="uml-decision color-menu" points="575,180 730,225 575,270 420,225" />
-            <text class="uml-text-bold" x="575" y="225" text-anchor="middle">MENÚ PRINCIPAL</text>
-
-            <!-- OPCIÓN 9: SALIR (EXTREMO DERECHO SUPERIOR) -->
-            <path class="uml-line" d="M 730 225 L 1050 225 L 1050 280" />
-            <text class="uml-label" x="890" y="215" text-anchor="middle">Opción 9: Salir</text>
-            
-            <circle class="uml-end-outer" cx="1050" cy="305" r="14" />
-            <circle class="uml-end-inner" cx="1050" cy="305" r="8" />
-            <text class="uml-text-bold" x="1050" y="335" text-anchor="middle">FIN</text>
-
-            <!-- ======================================================
-                 3. RAMA REGISTRO (OPCIÓN 2) - IZQUIERDA
-                 ====================================================== -->
-            <path class="uml-line" d="M 420 225 L 150 225 L 150 280" />
-            <text class="uml-label" x="280" y="215" text-anchor="middle">Opción 2: Registro</text>
-
-            <rect class="uml-action" x="50" y="280" width="200" height="50" rx="15" />
-            <text class="uml-text-bold" x="150" y="305" text-anchor="middle">Capturar Datos</text>
-            <text class="uml-text-small" x="150" y="318" text-anchor="middle">CI + Nombre Estudiante</text>
-
-            <path class="uml-line" d="M 150 330 L 150 370" />
-            <polygon class="uml-decision" points="150,370 210,400 150,430 90,400" />
-            
-            <!-- Guard: ¿Es Prioritario? -->
-            <path class="uml-line" d="M 90 400 L 40 400 L 40 460" />
-            <text class="uml-label" x="65" y="395">Sí [Prio]</text>
-            <rect class="uml-action color-prio" x="-40" y="460" width="160" height="40" rx="15" transform="translate(40,0)"/>
-            <text class="uml-text-bold" x="40" y="485" text-anchor="middle">Add ColaPrioridad</text>
-
-            <path class="uml-line" d="M 210 400 L 260 400 L 260 460" />
-            <text class="uml-label" x="235" y="395">No</text>
-            <rect class="uml-action color-simple" x="180" y="460" width="160" height="40" rx="15" />
-            <text class="uml-text-bold" x="260" y="485" text-anchor="middle">Add ColaSimple</text>
-
-            <!-- RETORNO IZQUIERDO (RUTA EXTREMA EXTERIOR) -->
-            <path class="uml-return" d="M 40 500 L 40 1450 L 1100 1450 L 1100 160 L 575 160" marker-end="" />
-            <path class="uml-line" d="M 260 500 L 260 520" marker-end="" />
-            <path class="uml-return" d="M 260 520 L 260 540 L 1080 540 L 1080 160 L 575 160" marker-end="" />
-
-            <!-- ======================================================
-                 4. RAMA PROCESAR (OPCIÓN 3/6) - CENTRAL
-                 ====================================================== -->
-            <path class="uml-line" d="M 575 270 L 575 580" />
-            <text class="uml-label" x="585" y="550" text-anchor="start">Opción 3/6: Inscribir</text>
-
-            <rect class="uml-action" x="450" y="580" width="250" height="50" rx="15" />
-            <text class="uml-text-bold" x="575" y="605" text-anchor="middle">Dequeue Candidato</text>
-            <text class="uml-text-small" x="575" y="618" text-anchor="middle">Jerarquía: Prioridad > Simple</text>
-
-            <path class="uml-line" d="M 575 630 L 575 670" />
-            <polygon class="uml-decision" points="575,670 650,700 575,730 500,700" />
-            
-            <!-- Guard: ¿Cupos Libres? -->
-            <path class="uml-line" d="M 575 730 L 575 780" />
-            <text class="uml-label" x="585" y="755">Sí [Cupo]</text>
-            <rect class="uml-action color-enroll" x="450" y="780" width="250" height="50" rx="15" />
-            <text class="uml-text-bold" x="575" y="805" text-anchor="middle">Registrar Inscrito</text>
-
-            <path class="uml-line" d="M 650 700 L 800 700 L 800 780" />
-            <text class="uml-label" x="725" y="695">No [Lleno]</text>
-            <rect class="uml-action color-circular" x="700" y="780" width="200" height="50" rx="15" />
-            <text class="uml-text-bold" x="800" y="805" text-anchor="middle">Mover a ColaCircular</text>
-
-            <!-- REGISTRO EN HISTORIAL (COMÚN) -->
-            <path class="uml-line" d="M 575 830 L 575 870" />
-            <path class="uml-line" d="M 800 830 L 800 870 L 575 870" marker-end="" />
-            <rect class="uml-action color-hist" x="475" y="870" width="200" height="40" rx="10" />
-            <text class="uml-text-bold" x="575" y="895" text-anchor="middle">Registrar Historial</text>
-
-            <!-- RETORNO CENTRAL -->
-            <path class="uml-return" d="M 475 890 L 410 890 L 410 160 L 575 160" marker-end="" />
-
-            <!-- ======================================================
-                 5. RAMA RETIRO (OPCIÓN 5) - DERECHA
-                 ====================================================== -->
-            <path class="uml-line" d="M 730 225 L 1000 225 L 1000 950 L 710 950" />
-            <text class="uml-label" x="865" y="240" text-anchor="middle">Opción 5: Retiro</text>
-
-            <rect class="uml-action" x="460" y="925" width="250" height="50" rx="15" />
-            <text class="uml-text-bold" x="585" y="950" text-anchor="middle">Liberar Cupo Inscrito</text>
-            <text class="uml-text-small" x="585" y="963" text-anchor="middle">Se dispara Reasignación</text>
-
-            <path class="uml-line" d="M 585 975 L 585 1010" />
-            <polygon class="uml-decision" points="585,1010 680,1045 585,1080 490,1045" />
-
-            <!-- Guard: ¿Candidatos en Espera? -->
-            <path class="uml-line" d="M 585 1080 L 585 1120" />
-            <text class="uml-label" x="595" y="1100">Sí</text>
-            <rect class="uml-action color-enroll" x="485" y="1120" width="200" height="45" rx="15" />
-            <text class="uml-text-bold" x="585" y="1148" text-anchor="middle">Asignar Vacante</text>
-
-            <path class="uml-line" d="M 680 1045 L 750 1045 L 750 1120" />
-            <text class="uml-label" x="715" y="1035">No</text>
-            <rect class="uml-action" x="700" y="1120" width="100" height="45" rx="15" />
-            <text class="uml-text-small" x="750" y="1148" text-anchor="middle">Fin Acción</text>
-
-            <!-- RETORNO DERECHO -->
-            <path class="uml-return" d="M 585 1165 L 585 1210 L 380 1210 L 380 160 L 575 160" marker-end="" />
-
-            <!-- ======================================================
-                 6. RAMA DESHACER (OPCIÓN 7) - EXTREMO ABAJO
-                 ====================================================== -->
-            <path class="uml-line" d="M 575 270 L 575 1280" />
-            <text class="uml-label" x="585" y="1265" text-anchor="start">Opción 7: Deshacer</text>
-
-            <rect class="uml-action color-hist" x="450" y="1280" width="250" height="50" rx="15" />
-            <text class="uml-text-bold" x="575" y="1305" text-anchor="middle">↩️ Revertir Última Acción</text>
-            <text class="uml-text-small" x="575" y="1318" text-anchor="middle">Estado de colas restaurado</text>
-
-            <path class="uml-return" d="M 450 1305 L 350 1305 L 350 160 L 575 160" marker-end="" />
-
-            <!-- LEGEND - BOTTOM LEFT -->
-            <rect x="20" y="1400" width="250" height="120" rx="8" fill="#fff" stroke="#cbd5e0" />
-            <text class="uml-text-bold" x="145" y="1420" text-anchor="middle">Guía de Colores UML</text>
-            <rect x="30" y="1435" width="20" height="12" class="color-menu" rx="2" /> <text class="uml-text-small" x="60" y="1445">Menú y Decisiones</text>
-            <rect x="30" y="1455" width="20" height="12" class="color-simple" rx="2" /> <text class="uml-text-small" x="60" y="1465">ColaSimple (Normal)</text>
-            <rect x="30" y="1475" width="20" height="12" class="color-prio" rx="2" /> <text class="uml-text-small" x="60" y="1485">ColaPrioridad (Urgente)</text>
-            <rect x="30" y="1495" width="20" height="12" class="color-circular" rx="2" /> <text class="uml-text-small" x="60" y="1505">ColaCircular (Espera)</text>
-
-        </svg>
+      <footer>
+        Generado para el Informe Técnico de Estructuras de Datos - PUCE 2026
+      </footer>
     </div>
-
-</body>
+  </body>
 </html>
